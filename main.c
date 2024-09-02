@@ -17,6 +17,7 @@ int main(){
   int argCount; 
 
   while(1){
+    printf("$ ");
     fgets(input, sizeof(input),stdin);//lee toda la linea de entrada
     char* execArgs[] = {input};
     //TODO: separar execArgs debe tener los valores de input separados por espacio
