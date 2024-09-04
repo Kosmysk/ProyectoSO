@@ -24,7 +24,7 @@ int miExec(char* args[]){
 int main(){
   char input[1000];
   int argCount; 
-  
+  system("clear");
   while(1){
     printf("$ ");
     fgets(input, sizeof(input),stdin);//lee toda la linea de entrada
