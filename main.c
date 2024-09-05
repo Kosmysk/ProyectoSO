@@ -11,6 +11,7 @@ int recursivePipe(char* args1[], char* args2[]){
   //TODO
   return 0;
 }
+/*
 int miExec(char* args[]){
   int pid = fork();
       if(pid==0){  
@@ -21,6 +22,13 @@ int miExec(char* args[]){
       }
   return 0;
 }
+*/
+
+// Esta funcion, por medio de punteros, modificara el valor de el arreglo de strings execArgs[]
+void leerTexto(char input[1000]){
+
+}
+
 int main(){
   char input[1000];
   int argCount; 
@@ -30,8 +38,32 @@ int main(){
     fgets(input, sizeof(input),stdin);//lee toda la linea de entrada
     input[strlen(input)-1]='\0';
 
-    //asumiendo input es "ls -l"
-    char* execArgs[] = {input,NULL};
+    // Separar texto
+
+    // Contar cantidad de espacios
+    int space = 0;
+    for (int i = 0; i < strlen(input);i++){
+      if (input[i] == ' ' && input[i + 1] != ' '){
+        space ++;
+      }
+    }
+    // Separar argumentos y guardarlos en execArgs[]
+    char** execArgs = (char**)malloc(sizeof(char*) * 100);
+
+    int i = 0;
+    char* token = strtok(input, " ");
+    while(token != NULL){
+      execArgs[i] = (char*)malloc(strlen(token) + 1);
+      execArgs[i] = token;
+      i++;
+      token = strtok(NULL, " ");
+    }
+    
+    for (int j = 0; j < i; j++){
+      printf("[%s] ", execArgs[j]);
+    }
+    printf("\nSon %d palabras", i);
+    
     //TODO: separar execArgs debe tener los valores de input separados por espacio
     // ej: "aaa bbb ccc" -> {"aaa","bbb","ccc"}
     //TODO argCount debe guardar la cantidad de argumentos que tiene el comando ingresado
@@ -39,11 +71,13 @@ int main(){
     if(strcmp(execArgs[0],"exit")==0){
       return 0;
     }
-    if(/*no hay pipe*/1){ //TODO:hacer argumento del if
+    /*
+    if(no hay pipe1){ //TODO:hacer argumento del if
       miExec(execArgs);
     }else{
       //si si hay pipe
     }
+    */
   }
   return 0;
 }
