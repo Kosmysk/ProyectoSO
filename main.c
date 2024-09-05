@@ -17,10 +17,21 @@ int miExec(char* args[]){
         int e = execvp(args[0],args);
         printf("hubo un error\n");
       }else{
-        wait(pid);
+       wait(NULL);
       }
   return 0;
 }
+
+  // Nueva función para manejar el recordatorio
+  void setRecordatorio(int tiempo, char* mensaje) {
+        int pid = fork();
+        if(pid == 0) { // Proceso hijo
+            sleep(tiempo);
+            printf("\nRecordatorio: %s\n", mensaje);
+            exit(0);
+        }
+}
+
 int main(){
   char input[1000];
   int argCount; 
@@ -30,20 +41,37 @@ int main(){
     fgets(input, sizeof(input),stdin);//lee toda la linea de entrada
     input[strlen(input)-1]='\0';
 
-    //asumiendo input es "ls -l"
-    char* execArgs[] = {input,NULL};
+
     //TODO: separar execArgs debe tener los valores de input separados por espacio
     // ej: "aaa bbb ccc" -> {"aaa","bbb","ccc"}
     //TODO argCount debe guardar la cantidad de argumentos que tiene el comando ingresado
-    
-    if(strcmp(execArgs[0],"exit")==0){
-      return 0;
-    }
-    if(/*no hay pipe*/1){ //TODO:hacer argumento del if
-      miExec(execArgs);
-    }else{
-      //si si hay pipe
-    }
+
+      // TODO: Código temporal para separar argumentos, será reemplazado por la implementación final.
+          char* execArgs[100];
+          char* token = strtok(input, " ");
+          argCount = 0;
+          while(token != NULL) {
+           execArgs[argCount++] = token;
+           token = strtok(NULL, " ");
+         }
+          execArgs[argCount] = NULL;
+
+      if(strcmp(execArgs[0], "exit") == 0) {
+        return 0;
+      }
+      // Comando personalizado "set recordatorio"     
+      if(strcmp(execArgs[0], "set") == 0 && strcmp(execArgs[1], "recordatorio") == 0) {
+        int tiempo = atoi(execArgs[2]);
+        char mensaje[1000] = "";
+        for(int i = 3; i < argCount; i++) {
+          strcat(mensaje, execArgs[i]);
+          if (i < argCount - 1) strcat(mensaje, " ");
+        }
+      setRecordatorio(tiempo, mensaje);
+        } else {
+          // Ejecución normal del comando
+          miExec(execArgs);
+        }
   }
   return 0;
 }
