@@ -24,10 +24,20 @@ int miExec(char* args[]){
 }
 */
 
-// Esta funcion, por medio de punteros, modificara el valor de el arreglo de strings execArgs[]
-void leerTexto(char input[1000]){
+// Esta funcion, por medio de punteros, modificara el valor de el arreglo de strings execArgs[], y devolverá la cantidad de argumentos
+int separarTexto(char input[1000], char *argumentos[]){
+    int i = 0;
+    char* token = strtok(input, " ");
+    while(token != NULL){
+      argumentos[i] = (char*)malloc(strlen(token) + 1);
+      strcpy(argumentos[i], token);
+      i++;
+      token = strtok(NULL, " ");
+    }
 
-}
+    return i;
+    }
+    
 
 int main(){
   char input[1000];
@@ -48,22 +58,13 @@ int main(){
       }
     }
     // Separar argumentos y guardarlos en execArgs[]
-    char** execArgs = (char**)malloc(sizeof(char*) * 100);
+    char** execArgs;
+    int CantidadArgs = separarTexto(input, execArgs);
 
-    int i = 0;
-    char* token = strtok(input, " ");
-    while(token != NULL){
-      execArgs[i] = (char*)malloc(strlen(token) + 1);
-      execArgs[i] = token;
-      i++;
-      token = strtok(NULL, " ");
-    }
-    
-    for (int j = 0; j < i; j++){
+    for (int j = 0; j < CantidadArgs; j++){
       printf("[%s] ", execArgs[j]);
     }
-    printf("\nSon %d palabras", i);
-    
+    printf("\nSon %d argumentos", CantidadArgs);
     //TODO: separar execArgs debe tener los valores de input separados por espacio
     // ej: "aaa bbb ccc" -> {"aaa","bbb","ccc"}
     //TODO argCount debe guardar la cantidad de argumentos que tiene el comando ingresado
@@ -71,6 +72,8 @@ int main(){
     if(strcmp(execArgs[0],"exit")==0){
       return 0;
     }
+    
+    
     /*
     if(no hay pipe1){ //TODO:hacer argumento del if
       miExec(execArgs);
