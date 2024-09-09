@@ -1,28 +1,14 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <errno.h>
 #include <string.h>
-/*esta funcion va a tomar dos arreglos de argumentos, y usara la funcion pipe
-para hacer la salida de uno la entrada del otro. Si args2 tambien contiene pipe,
-se va a llamar a si misma, recursivamente
-retorna 0 si se ejecuta correctamente y -1 si hay un error*/
-int recursivePipe(char* args1[], char* args2[]){
-  //TODO
-  return 0;
-}
-/*
-int miExec(char* args[]){
-  int pid = fork();
-      if(pid==0){  
-        int e = execvp(args[0],args);
-        printf("hubo un error\n");
-      }else{
-        wait(pid);
-      }
-  return 0;
-}
-*/
+
+
+
 
 // Esta funcion, por medio de punteros, modificara el valor de el arreglo de strings execArgs[], y devolverá la cantidad de argumentos
 int separarTexto(char input[1000], char *argumentos[]){
@@ -36,8 +22,41 @@ int separarTexto(char input[1000], char *argumentos[]){
     }
 
     return i;
+}
+void separarComandos(int cantidadArgumentos, char* argumentos[], int cantidadComandos, char** comandos[]){
+    int index=0;
+    int cLen = 0; //cLen es la cantidad de argumentos de cada comando individual
+    for(int i=0;i<cantidadComandos-1; i++){ //repetir por la cantidad de comandos (menos uno porque el ultimo se hace fuera del loop)
+      cLen=0;
+      for(int j=index; strcmp(argumentos[j],"|")!=0;j++){//contar la cantidad de argumentos que hay hasta el siguiente |
+        cLen++;
+      }
+      comandos[i] = (char**)malloc(sizeof(char*)*(cLen+1));
+      for(int j=0; j<cLen; j++){
+        comandos[i][j] = malloc(sizeof(char)*strlen(argumentos[index+j]));
+        strcpy(comandos[i][j],argumentos[index+j]);
+      }
+      comandos[i][cLen] = NULL;
+      index += cLen+1;
     }
-    
+    //terminar de guardar el ultimo comando
+    cLen =  cantidadArgumentos - index;
+    comandos[cantidadComandos-1] = (char**)malloc(sizeof(char*)*(cLen+1));
+    for(int j=0; j<cLen; j++){
+      comandos[cantidadComandos-1][j] = malloc(sizeof(char)*strlen(argumentos[index+j]));
+      strcpy(comandos[cantidadComandos-1][j],argumentos[index+j]);
+    }
+}
+void swapPipes(int p1[], int p2[]){
+    int tmp = p1[0];
+    p1[0]=p2[0];
+    p2[0]=tmp;
+
+    tmp = p1[1];
+    p1[1]=p2[1];
+    p2[1]=tmp;
+    return;
+}
 
 int main(){
   char input[1000];
@@ -58,29 +77,69 @@ int main(){
       }
     }
     // Separar argumentos y guardarlos en execArgs[]
-    char** execArgs;
+    char** execArgs = malloc(sizeof(char**)*space);
+    //TODO: free execArgs
     int CantidadArgs = separarTexto(input, execArgs);
 
     for (int j = 0; j < CantidadArgs; j++){
-      printf("[%s] ", execArgs[j]);
+      //printf("[%s] ", execArgs[j]);
     }
-    printf("\nSon %d argumentos", CantidadArgs);
-    //TODO: separar execArgs debe tener los valores de input separados por espacio
-    // ej: "aaa bbb ccc" -> {"aaa","bbb","ccc"}
-    //TODO argCount debe guardar la cantidad de argumentos que tiene el comando ingresado
-    
+    //printf("\nSon %d argumentos\n", CantidadArgs);
+
     if(strcmp(execArgs[0],"exit")==0){
       return 0;
     }
-    
-    
-    /*
-    if(no hay pipe1){ //TODO:hacer argumento del if
-      miExec(execArgs);
-    }else{
-      //si si hay pipe
+
+    //contar cantidad de comandos que se estan haciendo pipe
+    int cantidadComandos = 0;
+    for(int i=0;i<CantidadArgs;i++){
+      if(strcmp(execArgs[i],"|")==0){
+        cantidadComandos++;
+      }
     }
-    */
+    cantidadComandos += 1;
+    char*** comandos = (char***)malloc(sizeof(char**)*cantidadComandos);
+    //TODO: free comandos
+    separarComandos(CantidadArgs, execArgs,cantidadComandos, comandos);
+    
+
+    int p1[2];
+    int p2[2];
+    if(pipe(p1) == -1 || pipe(p2) == -1) {
+        perror("pipe");
+        return 1;
+    }
+    pid_t pid;
+    for(int i=0;i<cantidadComandos;i++){
+        pipe(p2); //make a new pipe in p2, to write to
+        pid = fork();
+        if(pid==0){
+            //read from p1, write to p2
+            close(p1[1]);
+            if(i!=0)dup2(p1[0],STDIN_FILENO);
+            close(p1[0]);
+
+            close(p2[0]);
+            if(i!=cantidadComandos-1)dup2(p2[1],STDOUT_FILENO);
+            close(p2[1]);
+            //execute the command
+            execvp(comandos[i][0],comandos[i]);
+            printf("error\n");
+            exit(1);
+
+        }
+        close(p1[1]);
+        //wait for previous process to finish
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status)) {
+            // Process exited normally
+            int exit_status = WEXITSTATUS(status);
+        }
+        //swap the pipes so that next process read from the pipe that was written to
+        swapPipes(p1,p2);
+        
+    }
   }
   return 0;
 }
