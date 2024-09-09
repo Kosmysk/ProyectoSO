@@ -23,6 +23,7 @@ int separarTexto(char input[1000], char *argumentos[]){
 
     return i;
 }
+
 void separarComandos(int cantidadArgumentos, char* argumentos[], int cantidadComandos, char** comandos[]){
     int index=0;
     int cLen = 0; //cLen es la cantidad de argumentos de cada comando individual
@@ -66,10 +67,18 @@ void swapPipes(int p1[], int p2[]){
             printf("\nRecordatorio: %s\n$: ", mensaje);
             exit(0);
         }
+  }
+
+void almacenarComando(char ***almacenamiento, int *contador, char *input) {
+  *almacenamiento = realloc(*almacenamiento, (*contador + 1) * sizeof(char*));
+  (*almacenamiento)[*contador] = strdup(input); // Almacena una copia del input
+  (*contador)++;
 }
 
 int main(){
   char input[1000];
+  char **historial = NULL; // Arreglo dinamico para almacenar los comandos ingresados
+  int contadorHistorial = 0;
   int argCount; 
   system("clear");
   while(1){
@@ -95,20 +104,34 @@ int main(){
     }
     //printf("\nSon %d argumentos\n", CantidadArgs);
 
-      if(strcmp(execArgs[0], "exit") == 0) {
-        return 0;
+    if(strcmp(execArgs[0], "exit") == 0) {
+      for(int i = 0; i < contadorHistorial; i++) {
+        free(historial[i]);
       }
-      // Comando personalizado "set recordatorio"     
-      if(strcmp(execArgs[0], "set") == 0 && strcmp(execArgs[1], "recordatorio") == 0) {
-        int tiempo = atoi(execArgs[2]);
-        char mensaje[1000] = "";
-        for(int i = 3; i < CantidadArgs; i++) {
-          strcat(mensaje, execArgs[i]);
-          if (i < CantidadArgs - 1) strcat(mensaje, " ");
+        free(historial);
+        return 0;
+    }
+    // Comando personalizado "set recordatorio"     
+    if(strcmp(execArgs[0], "set") == 0 && strcmp(execArgs[1], "recordatorio") == 0) {
+      int tiempo = atoi(execArgs[2]);
+      char mensaje[1000] = "";
+      for(int i = 3; i < CantidadArgs; i++) {
+        strcat(mensaje, execArgs[i]);
+        if (i < CantidadArgs - 1) strcat(mensaje, " ");
         }
         setRecordatorio(tiempo, mensaje);
         continue;
       }
+      // Comando personalizado "history"
+      almacenarComando(&historial, &contadorHistorial, input);
+      
+      if(strcmp(execArgs[0], "history") == 0){
+      // Imprime los comandos almacenados
+      for(int i = 0; i < contadorHistorial; i++){
+        printf("%d: %s\n", i+1, historial[i]);
+      }
+      }
+
 
     //contar cantidad de comandos que se estan haciendo pipe
     int cantidadComandos = 0;
@@ -146,7 +169,7 @@ int main(){
             execvp(comandos[i][0],comandos[i]);
             printf("error\n");
             exit(1);
-
+          }
         }
         close(p1[1]);
         //wait for previous process to finish
@@ -158,9 +181,6 @@ int main(){
         }
         //swap the pipes so that next process read from the pipe that was written to
         swapPipes(p1,p2);
-        
     }
-
+    return 0;
   }
-  return 0;
-}
