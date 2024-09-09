@@ -63,7 +63,7 @@ void swapPipes(int p1[], int p2[]){
         int pid = fork();
         if(pid == 0) { // Proceso hijo
             sleep(tiempo);
-            printf("\nRecordatorio: %s\n", mensaje);
+            printf("\nRecordatorio: %s\n$: ", mensaje);
             exit(0);
         }
 }
@@ -73,7 +73,7 @@ int main(){
   int argCount; 
   system("clear");
   while(1){
-    printf("$ ");
+    printf("$: ");
     fgets(input, sizeof(input),stdin);//lee toda la linea de entrada
     input[strlen(input)-1]='\0';
     // Separar texto
@@ -102,12 +102,14 @@ int main(){
       if(strcmp(execArgs[0], "set") == 0 && strcmp(execArgs[1], "recordatorio") == 0) {
         int tiempo = atoi(execArgs[2]);
         char mensaje[1000] = "";
-        for(int i = 3; i < argCount; i++) {
+        for(int i = 3; i < CantidadArgs; i++) {
           strcat(mensaje, execArgs[i]);
-          if (i < argCount - 1) strcat(mensaje, " ");
+          if (i < CantidadArgs - 1) strcat(mensaje, " ");
         }
-      setRecordatorio(tiempo, mensaje);
-        } 
+        setRecordatorio(tiempo, mensaje);
+        continue;
+      }
+
     //contar cantidad de comandos que se estan haciendo pipe
     int cantidadComandos = 0;
     for(int i=0;i<CantidadArgs;i++){
