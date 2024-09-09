@@ -43,20 +43,14 @@ int separarTexto(char input[1000], char *argumentos[]){
 }
 void separarComandos(int cantidadArgumentos, char* argumentos[], int cantidadComandos, char** comandos[]){
     int index=0;
-    printf("in sep\n");//debug
     int cLen = 0; //cLen es la cantidad de argumentos de cada comando individual
     for(int i=0;i<cantidadComandos-1; i++){ //repetir por la cantidad de comandos (menos uno porque el ultimo se hace fuera del loop)
-      printf("splt cmd %d\n",i);//debug
       cLen=0;
       for(int j=index; strcmp(argumentos[j],"|")!=0;j++){//contar la cantidad de argumentos que hay hasta el siguiente |
-        printf("  %s is not |\n",argumentos[j]);//debug
         cLen++;
       }
-      printf("  finna malloc\n");//debug
       comandos[i] = (char**)malloc(sizeof(char*)*(cLen+1));
-      printf("  malloced\n");//debug
       for(int j=0; j<cLen; j++){
-        printf("    finna copy %s into space number %d\n",argumentos[index+j],j);//debug
         comandos[i][j] = malloc(sizeof(char)*strlen(argumentos[index+j]));
         strcpy(comandos[i][j],argumentos[index+j]);
       }
@@ -65,15 +59,11 @@ void separarComandos(int cantidadArgumentos, char* argumentos[], int cantidadCom
     }
     //terminar de guardar el ultimo comando
     cLen =  cantidadArgumentos - index;
-    printf("  finna malloc\n");//debug
     comandos[cantidadComandos-1] = (char**)malloc(sizeof(char*)*(cLen+1));
-    printf("  malloced\n");//debug
     for(int j=0; j<cLen; j++){
-      printf("    finna copy %s into space number %d\n",argumentos[index+j],j);//debug
       comandos[cantidadComandos-1][j] = malloc(sizeof(char)*strlen(argumentos[index+j]));
       strcpy(comandos[cantidadComandos-1][j],argumentos[index+j]);
     }
-    printf("finished spliting commands\n");//debug
 }
 void swapPipes(int p1[], int p2[]){
     int tmp = p1[0];
@@ -110,9 +100,9 @@ int main(){
     int CantidadArgs = separarTexto(input, execArgs);
 
     for (int j = 0; j < CantidadArgs; j++){
-      printf("[%s] ", execArgs[j]);
+      //printf("[%s] ", execArgs[j]);
     }
-    printf("\nSon %d argumentos\n", CantidadArgs);
+    //printf("\nSon %d argumentos\n", CantidadArgs);
 
     if(strcmp(execArgs[0],"exit")==0){
       return 0;
@@ -128,8 +118,9 @@ int main(){
     cantidadComandos += 1;
     char*** comandos = (char***)malloc(sizeof(char**)*cantidadComandos);
     //TODO: free comandos
-    printf("separar comandos\n");
     separarComandos(CantidadArgs, execArgs,cantidadComandos, comandos);
+    
+    /*
     for(int i=0;i<cantidadComandos;i++){//debug
       printf("cmd %d: ",i+1);
       for(int j=0; comandos[i][j]!=NULL; j++){
@@ -137,6 +128,7 @@ int main(){
       }
       printf("\n");
     }
+    */
     
 
     int p1[2];
@@ -146,9 +138,7 @@ int main(){
         return 1;
     }
     pid_t pid;
-    printf("entering loop\n");
     for(int i=0;i<cantidadComandos;i++){
-        printf("finna fork,%d\n",i);
         pipe(p2); //make a new pipe in p2, to write to
         pid = fork();
         if(pid==0){
@@ -173,7 +163,6 @@ int main(){
         if (WIFEXITED(status)) {
             // Process exited normally
             int exit_status = WEXITSTATUS(status);
-            printf("Child exited with status: %d\n", exit_status);
         }
         //swap the pipes so that next process read from the pipe that was written to
         swapPipes(p1,p2);
