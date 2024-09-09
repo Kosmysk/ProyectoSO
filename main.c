@@ -36,8 +36,51 @@ int separarTexto(char input[1000], char *argumentos[]){
     }
 
     return i;
+}
+void separarComandos(int cantidadArgumentos, char* argumentos[], int cantidadComandos, char** comandos[]){
+    int index=0;
+    printf("in sep\n");//debug
+    int cLen = 0; //cLen es la cantidad de argumentos de cada comando individual
+    for(int i=0;i<cantidadComandos-1; i++){ //repetir por la cantidad de comandos (menos uno porque el ultimo se hace fuera del loop)
+      printf("splt cmd %d\n",i);//debug
+      cLen=0;
+      for(int j=index; strcmp(argumentos[j],"|")!=0;j++){//contar la cantidad de argumentos que hay hasta el siguiente |
+        printf("  %s is not |\n",argumentos[j]);//debug
+        cLen++;
+      }
+      printf("  finna malloc\n");//debug
+      comandos[i] = (char**)malloc(sizeof(char*)*(cLen+1));
+      printf("  malloced\n");//debug
+      for(int j=0; j<cLen; j++){
+        printf("    finna copy %s into space number %d\n",argumentos[index+j],j);//debug
+        comandos[i][j] = malloc(sizeof(char)*strlen(argumentos[index+j]));
+        strcpy(comandos[i][j],argumentos[index+j]);
+      }
+      comandos[i][cLen] = NULL;
+      index += cLen+1;
     }
-    
+    //terminar de guardar el ultimo comando
+    cLen =  cantidadArgumentos - index;
+    printf("  finna malloc\n");//debug
+    comandos[cantidadComandos-1] = (char**)malloc(sizeof(char*)*(cLen+1));
+    printf("  malloced\n");//debug
+    for(int j=0; j<cLen; j++){
+      printf("    finna copy %s into space number %d\n",argumentos[index+j],j);//debug
+      comandos[cantidadComandos-1][j] = malloc(sizeof(char)*strlen(argumentos[index+j]));
+      strcpy(comandos[cantidadComandos-1][j],argumentos[index+j]);
+    }
+    printf("finished spliting commands\n");//debug
+}
+void swapPipes(int p1[], int p2[]){
+    int tmp = p1[0];
+    p1[0]=p2[0];
+    p2[0]=tmp;
+
+    tmp = p1[1];
+    p1[1]=p2[1];
+    p2[1]=tmp;
+    return;
+}
 
 int main(){
   char input[1000];
@@ -58,21 +101,38 @@ int main(){
       }
     }
     // Separar argumentos y guardarlos en execArgs[]
-    char** execArgs;
+    char** execArgs = malloc(sizeof(char**)*space);
+    //TODO: free execArgs
     int CantidadArgs = separarTexto(input, execArgs);
 
     for (int j = 0; j < CantidadArgs; j++){
       printf("[%s] ", execArgs[j]);
     }
-    printf("\nSon %d argumentos", CantidadArgs);
-    //TODO: separar execArgs debe tener los valores de input separados por espacio
-    // ej: "aaa bbb ccc" -> {"aaa","bbb","ccc"}
-    //TODO argCount debe guardar la cantidad de argumentos que tiene el comando ingresado
-    
+    printf("\nSon %d argumentos\n", CantidadArgs);
+
     if(strcmp(execArgs[0],"exit")==0){
       return 0;
     }
-    
+
+    //contar cantidad de comandos que se estan haciendo pipe
+    int cantidadComandos = 0;
+    for(int i=0;i<CantidadArgs;i++){
+      if(strcmp(execArgs[i],"|")==0){
+        cantidadComandos++;
+      }
+    }
+    cantidadComandos += 1;
+    char*** comandos = (char***)malloc(sizeof(char**)*cantidadComandos);
+    //TODO: free comandos
+    printf("separar comandos\n");
+    separarComandos(CantidadArgs, execArgs,cantidadComandos, comandos);
+    for(int i=0;i<cantidadComandos;i++){//debug
+      printf("cmd %d: ",i+1);
+      for(int j=0; comandos[i][j]!=NULL; j++){
+        printf("%s ",comandos[i][j]);
+      }
+      printf("\n");
+    }
     
     /*
     if(no hay pipe1){ //TODO:hacer argumento del if
