@@ -107,10 +107,7 @@ int main(){
           if (i < argCount - 1) strcat(mensaje, " ");
         }
       setRecordatorio(tiempo, mensaje);
-        } else {
-          // Ejecución normal del comando
-          miExec(execArgs);
-        }
+        } 
     //contar cantidad de comandos que se estan haciendo pipe
     int cantidadComandos = 0;
     for(int i=0;i<CantidadArgs;i++){
