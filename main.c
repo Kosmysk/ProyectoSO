@@ -12,9 +12,9 @@ int recursivePipe(char* args1[], char* args2[]){
   return 0;
 }
 int miExec(char* args[]){
-  int pid = fork();
+  int pid = fork();       // Crea un proceso hijo
   if(pid==0){  
-    int e = execvp(args[0],args);
+    int e = execvp(args[0],args);     // Ejecuta el comando 
       printf("hubo un error\n");
     }else{
       wait(pid);
@@ -23,37 +23,37 @@ int miExec(char* args[]){
 }
 
 void almacenarComando(char ***almacenamiento, int *contador, char *input) {
-  *almacenamiento = realloc(*almacenamiento, (*contador + 1) * sizeof(char*));
+  *almacenamiento = realloc(*almacenamiento, (*contador + 1) * sizeof(char*));  // Redimensiona el arreglo
   (*almacenamiento)[*contador] = strdup(input); // Almacena una copia del input
-  (*contador)++;
+  (*contador)++;    // Incrementa el contador del historial
 }
 
 int main(){
   char input[1000];
   char **historial = NULL; // Arreglo dinamico para almacenar los comandos ingresados
-  int contadorHistorial = 0;
-  int argCount; 
+  int contadorHistorial = 0;    // Inicializa la variable contador
+  int argCount;       
   system("clear");
   while(1){
     printf("$ ");
     fgets(input, sizeof(input),stdin);//lee toda la linea de entrada
     input[strlen(input)-1]='\0';
 
-    almacenarComando(&historial, &contadorHistorial, input);
+    almacenarComando(&historial, &contadorHistorial, input);      // Almacena el comando en el historial
 
     //asumiendo input es "ls -l"
     char* execArgs[] = {input,NULL};
-    char *token = strtok(input, " ");
-    argCount = 0;
+    char *token = strtok(input, " ");       // separa el input por espacios
+    argCount = 0;         
     //TODO: separar execArgs debe tener los valores de input separados por espacio
     // ej: "aaa bbb ccc" -> {"aaa","bbb","ccc"}
     //TODO argCount debe guardar la cantidad de argumentos que tiene el comando ingresado
     
     if(strcmp(execArgs[0],"exit")==0){
       for(int i = 0; i < contadorHistorial; i++) {
-        free(historial[i]);
+        free(historial[i]);      // Borrar cada comando del historial de comandos
       }
-      free(historial);
+      free(historial);           // Borrar cada comando del historial de comandos
       return 0;
     }
     if(strcmp(execArgs[0], "history") == 0){
