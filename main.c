@@ -30,6 +30,7 @@ void separarComandos(int cantidadArgumentos, char* argumentos[], int cantidadCom
       cLen=0;
       for(int j=index; strcmp(argumentos[j],"|")!=0;j++){//contar la cantidad de argumentos que hay hasta el siguiente |
         cLen++;
+
       }
       comandos[i] = (char**)malloc(sizeof(char*)*(cLen+1));
       for(int j=0; j<cLen; j++){
@@ -57,6 +58,15 @@ void swapPipes(int p1[], int p2[]){
     p2[1]=tmp;
     return;
 }
+  // Nueva función para manejar el recordatorio
+  void setRecordatorio(int tiempo, char* mensaje) {
+        int pid = fork();
+        if(pid == 0) { // Proceso hijo
+            sleep(tiempo);
+            printf("\nRecordatorio: %s\n", mensaje);
+            exit(0);
+        }
+}
 
 int main(){
   char input[1000];
@@ -66,7 +76,6 @@ int main(){
     printf("$ ");
     fgets(input, sizeof(input),stdin);//lee toda la linea de entrada
     input[strlen(input)-1]='\0';
-
     // Separar texto
 
     // Contar cantidad de espacios
@@ -86,10 +95,19 @@ int main(){
     }
     //printf("\nSon %d argumentos\n", CantidadArgs);
 
-    if(strcmp(execArgs[0],"exit")==0){
-      return 0;
-    }
-
+      if(strcmp(execArgs[0], "exit") == 0) {
+        return 0;
+      }
+      // Comando personalizado "set recordatorio"     
+      if(strcmp(execArgs[0], "set") == 0 && strcmp(execArgs[1], "recordatorio") == 0) {
+        int tiempo = atoi(execArgs[2]);
+        char mensaje[1000] = "";
+        for(int i = 3; i < argCount; i++) {
+          strcat(mensaje, execArgs[i]);
+          if (i < argCount - 1) strcat(mensaje, " ");
+        }
+      setRecordatorio(tiempo, mensaje);
+        } 
     //contar cantidad de comandos que se estan haciendo pipe
     int cantidadComandos = 0;
     for(int i=0;i<CantidadArgs;i++){
@@ -140,6 +158,7 @@ int main(){
         swapPipes(p1,p2);
         
     }
+
   }
   return 0;
 }
