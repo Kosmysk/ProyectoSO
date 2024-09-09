@@ -7,8 +7,13 @@
 #include <errno.h>
 #include <string.h>
 
-
-
+typedef struct {
+    char* comando;
+    int id;
+} Fav;
+Fav favoritos[100];       // Lista de 100 comandos favoritos en memoria
+int contadorFavs = 0;     // Cantidad de comandos favoritos actuales
+char* archivoFavs = NULL; // Ruta del archivo donde se guardan los favoritos
 
 // Esta funcion, por medio de punteros, modificara el valor de el arreglo de strings execArgs[], y devolverá la cantidad de argumentos
 int separarTexto(char input[1000], char *argumentos[]){
@@ -59,31 +64,139 @@ void swapPipes(int p1[], int p2[]){
     p2[1]=tmp;
     return;
 }
-  // Nueva función para manejar el recordatorio
-  void setRecordatorio(int tiempo, char* mensaje) {
-        int pid = fork();
-        if(pid == 0) { // Proceso hijo
-            sleep(tiempo);
-            printf("\nRecordatorio: %s\n$: ", mensaje);
-            exit(0);
-        }
+// Nueva función para manejar el recordatorio
+void setRecordatorio(int tiempo, char* mensaje) {
+  int pid = fork();
+  if(pid == 0) { // Proceso hijo
+    sleep(tiempo);
+    printf("\nRecordatorio: %s\n$: ", mensaje);
+    exit(0);
   }
-
-void almacenarComando(char ***almacenamiento, int *contador, char *input) {
-  *almacenamiento = realloc(*almacenamiento, (*contador + 1) * sizeof(char*));
-  (*almacenamiento)[*contador] = strdup(input); // Almacena una copia del input
-  (*contador)++;
+}
+void agregarFav(char *comando) {
+    for(int i = 0; i < contadorFavs; i++){
+        if(strcmp(favoritos[i].comando, comando) == 0){     // Verifica si el comando ya está en favoritos
+            return; // Comando ya en favoritos, no se agrega
+        }
+    }
+    if(contadorFavs < 100){
+        favoritos[contadorFavs].comando = strdup(comando);    // Agrega un nuevo favorito si hay espacio
+        favoritos[contadorFavs].id = contadorFavs + 1;
+        contadorFavs++;
+    }
 }
 
+// Muestra los comandos favoritos en memoria
+void mostrarFav() {
+    if(contadorFavs == 0){
+        printf("No hay comandos favoritos.\n");
+        return;
+    }
+    for(int i = 0; i < contadorFavs; i++){
+        printf("%d: %s\n", favoritos[i].id, favoritos[i].comando);
+    }
+}
+
+/* Elimina favoritos por número de identificación */
+void eliminarFav(char *numeros) {
+    char *num = strtok(numeros, ",");
+    while(num != NULL){
+        int id = atoi(num);
+        if(id > 0 && id <= contadorFavs){
+            free(favoritos[id - 1].comando); // Libera el comando
+            favoritos[id - 1].comando = NULL;
+        }
+        num = strtok(NULL, ",");
+    }
+    for(int i = 0, j = 0; i < contadorFavs; i++){   // Reorganiza la lista después de la eliminación
+        if(favoritos[i].comando != NULL){
+            favoritos[j] = favoritos[i];
+            favoritos[j].id = j + 1;
+            j++;
+        }
+    }
+    contadorFavs = j; // Actualiza el contador
+}
+
+// Busca un comando en favoritos que contenga el substring
+void buscarcmdFav(char *cmd) {
+    for(int i = 0; i < contadorFavs; i++){
+        if(strstr(favoritos[i].comando, cmd) != NULL){
+            printf("%d: %s\n", favoritos[i].id, favoritos[i].comando);
+        }
+    }
+}
+
+// Borra todos los comandos favoritos
+void borrarFav() {
+    for(int i = 0; i < contadorFavs; i++){
+        free(favoritos[i].comando);
+    }
+    contadorFavs = 0;
+}
+
+// Ejecuta un comando favorito por número
+void ejecutarFav(int id) {
+    if(id > 0 && id <= contadorFavs){
+        char *execArgs[100];
+        char *token = strtok(favoritos[id - 1].comando, " ");
+        int argCount = 0;
+        while(token != NULL && argCount < 99){
+            execArgs[argCount++] = token;
+            token = strtok(NULL, " ");
+        }
+        execArgs[argCount] = NULL;
+        miExec(execArgs);
+    } else {
+        printf("Numero de fav invalido.\n");
+    }
+}
+// Cargar los comandos favoritos desde un archivo
+void cargarFav() {
+    if(archivoFavs == NULL) {
+        printf("No se ha especificado ningún archivo de favoritos.\n");
+        return;
+    }
+    FILE *file = fopen(archivoFavs, "r");
+    if(file == NULL) {
+        printf("No se pudo abrir el archivo %s.\n", archivoFavs);
+        return;
+    }
+    char buffer[1000];
+    while(fgets(buffer, sizeof(buffer), file)) {
+        buffer[strcspn(buffer, "\n")] = 0; // Eliminar salto de línea
+        agregarFav(buffer);
+    }
+    fclose(file);
+    printf("Comandos favoritos cargados desde %s.\n", archivoFavs);
+}
+
+//Guardar los comandos favoritos en un archivo
+void guardarFav() {
+    if(archivoFavs == NULL) {                     // Caso en donde no se ingresa ningun parametro
+        printf("No se ha especificado ningún archivo de favoritos.\n");
+        return;
+    }
+    FILE *file = fopen(archivoFavs, "w");         // Caso en donde si se ingresa pero falla al abrir el archivo
+    if(file == NULL) {
+        printf("No se pudo abrir el archivo %s para escritura.\n", archivoFavs);
+        return;
+    }
+    for(int i = 0; i < contadorFavs; i++){       
+        fprintf(file, "%s\n", favoritos[i].comando);
+    }
+    fclose(file);
+    printf("Comandos favoritos guardados en %s.\n", archivoFavs);
+}
 int main(){
-  char input[1000];
-  char **historial = NULL; // Arreglo dinamico para almacenar los comandos ingresados
-  int contadorHistorial = 0;
-  int argCount; 
+  char input[1000];           // Almacena la entrada del usuario
+  char **historial = NULL;    // Arreglo dinamico para almacenar los comandos ingresados
+  int contadorHistorial = 0;  // Contador de comandos en el historial
+  int argCount;               // Contador de argumentos por cada comando
   system("clear");
   while(1){
-    printf("$: ");
-    fgets(input, sizeof(input),stdin);//lee toda la linea de entrada
+    printf("$: ");            // Prompt de la shell
+    fgets(input, sizeof(input),stdin);    //Lee toda la linea de entrada
     input[strlen(input)-1]='\0';
     // Separar texto
 
@@ -109,6 +222,7 @@ int main(){
         free(historial[i]);
       }
         free(historial);
+        guardarFav();
         return 0;
     }
     // Comando personalizado "set recordatorio"     
@@ -122,14 +236,12 @@ int main(){
         setRecordatorio(tiempo, mensaje);
         continue;
       }
-      // Comando personalizado "history"
-      almacenarComando(&historial, &contadorHistorial, input);
-      
-      if(strcmp(execArgs[0], "history") == 0){
-      // Imprime los comandos almacenados
-      for(int i = 0; i < contadorHistorial; i++){
-        printf("%d: %s\n", i+1, historial[i]);
-      }
+      if(strcmp(execArgs[0], "favs") == 0 && argCount >= 2) {
+        manejarFavs(execArgs[1], execArgs[2]);        // Manejar el comando favs y sus opciones
+      } else if(strcmp(execArgs[0], "history") == 0){
+        for(int i = 0; i < contadorHistorial; i++){
+          printf("%d: %s\n", i+1, historial[i]);      // Imprime los comandos almacenados
+        }
       }
 
 
