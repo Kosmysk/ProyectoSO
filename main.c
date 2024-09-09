@@ -1,8 +1,12 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <errno.h>
 #include <string.h>
+
 /*esta funcion va a tomar dos arreglos de argumentos, y usara la funcion pipe
 para hacer la salida de uno la entrada del otro. Si args2 tambien contiene pipe,
 se va a llamar a si misma, recursivamente
@@ -134,6 +138,47 @@ int main(){
       printf("\n");
     }
     
+
+    int p1[2];
+    int p2[2];
+    if(pipe(p1) == -1 || pipe(p2) == -1) {
+        perror("pipe");
+        return 1;
+    }
+    pid_t pid;
+    printf("entering loop\n");
+    for(int i=0;i<cantidadComandos;i++){
+        printf("finna fork,%d\n",i);
+        pipe(p2); //make a new pipe in p2, to write to
+        pid = fork();
+        if(pid==0){
+            //read from p1, write to p2
+            close(p1[1]);
+            if(i!=0)dup2(p1[0],STDIN_FILENO);
+            close(p1[0]);
+
+            close(p2[0]);
+            if(i!=cantidadComandos-1)dup2(p2[1],STDOUT_FILENO);
+            close(p2[1]);
+            //execute the command
+            execvp(comandos[i][0],comandos[i]);
+            printf("error\n");
+            exit(1);
+
+        }
+        close(p1[1]);
+        //wait for previous process to finish
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status)) {
+            // Process exited normally
+            int exit_status = WEXITSTATUS(status);
+            printf("Child exited with status: %d\n", exit_status);
+        }
+        //swap the pipes so that next process read from the pipe that was written to
+        swapPipes(p1,p2);
+        
+    }
     /*
     if(no hay pipe1){ //TODO:hacer argumento del if
       miExec(execArgs);
