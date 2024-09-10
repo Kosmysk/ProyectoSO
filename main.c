@@ -188,6 +188,29 @@ void guardarFav() {
     fclose(file);
     printf("Comandos favoritos guardados en %s.\n", archivoFavs);
 }
+// Manejo del comando favs
+void manejarFavs(char *opcion, char *parametro) {
+    if(strcmp(opcion, "crear") == 0 && parametro != NULL) {                       // "ejecuta" la opción crear
+        archivoFavs = strdup(parametro);
+        printf("Archivo de favoritos creado en: %s\n", archivoFavs);
+    } else if(strcmp(opcion, "mostrar") == 0) {                                   // "ejecuta" la opción mostrar
+        mostrarFav();
+    } else if(strcmp(opcion, "eliminar") == 0 && parametro != NULL) {             // "ejecuta" la opción eliminar
+        eliminarFav(parametro);
+    } else if(strcmp(opcion, "buscar") == 0 && parametro != NULL) {               // "ejecuta" la opción eliminar
+        buscarFav(parametro);
+    } else if(strcmp(opcion, "borrar") == 0) {                                    // "ejecuta" la opción borrar
+        borrarFav();
+    } else if(strcmp(opcion, "cargar") == 0) {                                    // "ejecuta" la opción cargar
+        cargarFav();
+    } else if(strcmp(opcion, "guardar") == 0) {                                    // "ejecuta" la opción guardar
+        guardarFav();
+    } else if(strcmp(opcion, "ejecutar") == 0 && parametro != NULL) {               // "ejecuta" la opción ejecutar
+        ejecutarFav(atoi(parametro));
+    } else {
+        printf("Comando favs no reconocido o incompleto.\n");
+    }
+}
 int main(){
   char input[1000];           // Almacena la entrada del usuario
   char **historial = NULL;    // Arreglo dinamico para almacenar los comandos ingresados
